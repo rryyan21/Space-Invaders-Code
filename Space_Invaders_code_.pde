@@ -1,109 +1,133 @@
-int alienXposition = 10;
-int alienYposition = 10;
-int stopWatch = millis()/1000*1000;
-int shipXposition = 500;
-int shipYposition = 750;
-int Xspeed;
-int alienSpeed = 20;
-int alienDirection = 1;
-int laserYPosition = 730;
-boolean circle = false;
-boolean playerRight = false;
-boolean playerLeft = false;
-boolean alienLeft = false;
-boolean alienRight = true;
-PImage SpaceShip;
-PImage UFO;
-int SpaceShipState = 1;
-PImage SpaceShip2;
-PImage Alien1;
-PImage bg;
-PImage bg2;
-boolean touchingRightEdge = false ;
-boolean touchingLeftEdge = false;
-int gameState = 1;
+boolean someGuyHitTheEdge = false;
+boolean drawUFO = true;
+boolean drawAliens = true;
+int alienHealth = 2;
+int UFOxPosition = 10;
+int UFOyPosition = 10;
+int UFOspeed = 20;
+int UFOdirection = 10;
 
-int[] alienXPositionArray = new int [60];
-int[] alienYPositionArray = new int [60];
-boolean[] alienShot = new boolean[60];
+void gameState2() {
+  background(bg2);
+  score();
+  UfoOnTopOfScreen();
+  UFOMovement();
+  gameOver();
+  stopWatch = millis()/1000*1000;
+  drawAlien();
+  alienMovement();
+  alienEdgeCollisionRight();
+  alienEdgeCollisionLeft();
+  laser();
+  laserUFOCollision();
+  for (int i = 0; i < 60; i++) {
+    laserAlienCollision(i);
+  }
+  healthOfAlien();
+  checkIfAlienIsOverRedLine(1);
+  Tank();
+  Player();
+  SpaceShipEdgeCollision();
+  println(millis()/1000*1000);
+}
 
-
-  //alienXPosition[i] = alienXPosition[i] + alienDirection*alienSpeed;
-
-  void setup() {
-  size(1000, 1000);
-  noSmooth();
-  SpaceShip = loadImage("SpaceShip.png");
-  UFO = loadImage("UFO.png");
-  SpaceShip2 = loadImage("SpaceShip2.png");
-  Alien1 = loadImage("Alien1.png");
-  bg = loadImage("space.jpeg");
-  bg2 = loadImage("Space2.jpeg");
+void alienEdgeCollisionRight() {
   for (int i=0; i<alienXPositionArray.length; i++) {
-    alienXPositionArray[i] = 65*(i%10)+100;
-    alienYPositionArray[i] = 65*(i/10)+100;
+    if (alienXPositionArray[i]>950) {
+      someGuyHitTheEdge = true;
+    }
+  }
+  if (someGuyHitTheEdge) {
+    for (int i= 0; i<60; i++) {
+      //dropdown
+      alienYPositionArray[i]=alienYPositionArray[i]+1;
+    }
+    //ReverseDirection
+    alienSpeed= -abs(alienSpeed);
+    someGuyHitTheEdge = false;
+  }
+}
+
+
+void alienEdgeCollisionLeft() {
+  for (int i=0; i<alienXPositionArray.length; i++) {
+    if (alienXPositionArray[i]<10) {
+      someGuyHitTheEdge = true;
+    }
+  }
+  if (someGuyHitTheEdge) {
+    for (int i= 0; i<60; i++) {
+      //dropdown
+      alienYPositionArray[i]=alienYPositionArray[i]+1;
+    }
+    //ReverseDirection
+    alienSpeed= abs(alienSpeed);
+    someGuyHitTheEdge = false;
+  }
+}
+
+void UfoOnTopOfScreen() {
+  if (drawUFO) {
+    image(UFO, UFOxPosition, UFOyPosition);
+    UFOxPosition += UFOspeed;
+  }
+}
+
+void UFOMovement() {
+  if (UFOxPosition>980) {
+    UFOspeed = -abs(UFOspeed);
+  }
+  if (UFOxPosition<10) {
+    UFOspeed = abs(UFOspeed);
+  }
+}
+
+void laserUFOCollision() {
+  int bottomOfUFO =  UFOyPosition+25;
+  int rightSideOfUFO = UFOxPosition+25;
+  int leftSideOfUFO = UFOxPosition;
+  int topOfLaser = laserYposition;
+  int leftSideOfLaser = laserXposition;
+  int rightSideOfLaser = laserXposition+5;
+
+  if (topOfLaser < bottomOfUFO && rightSideOfLaser > leftSideOfUFO && leftSideOfLaser < rightSideOfUFO) {
+    drawUFO = false;
+    score = score+1000;
+  }
+}
+
+void laserAlienCollision(int i) {
+  int topOfLaser = laserYposition;
+  int leftSideOfLaser = laserXposition;
+  int rightSideOfLaser = laserXposition+5;
+  int bottomOfLaser = laserYposition + 40;
+  int topOfAlien = alienYPositionArray[i];
+  int bottomOfAlien = alienYPositionArray[i] + 25; // hgt of alien could be wrong
+  int leftOfAlien = alienXPositionArray[i];
+  int rightOfAlien = alienXPositionArray[i] + 25;
+
+  if (topOfLaser < bottomOfAlien && bottomOfLaser > topOfAlien && leftSideOfLaser < rightOfAlien && rightSideOfLaser > leftOfAlien) {
+    laserOnScreen = false;
+    alienShot[i] = true;
+    score = score+100;
+  }
+}
+
+void drawAlien() {
+  fill(#FFFFFF);
+  for (int j = 0; j < alienXPositionArray.length; j++) {
+    if (alienShot[j] == false) {
+      image(Alien1, alienXPositionArray[j], alienYPositionArray[j]);
+    }
   }
 }
 
 
 
-void draw() {
-  if (gameState==1) {
-    gameState1();
-  }
-  if (gameState==2) {
-    gameState2();
-  }
-  if (gameState==3) {
-    gameState3();
-  }
-  if (gameState==4) {
-    gameState4();
-  }
-  if (gameState==5) {
-    gameState5();
-  }
-}
-
-
-
-
-
-
-void keyPressed() {
-  println(keyCode);
-  if (keyCode==37) {
-    playerLeft = true;
-  }
-  if (keyCode==39) {
-    playerRight = true;
-  }
-  if (keyCode==83) {
-    gameState = 2;
-  }
-  if (keyCode==32 && laserOnScreen == false) {
-    laserOnScreen = true;
-    laserXposition = shipXposition+40;
-  }
-  if (keyCode==72) {
-    SpaceShipState = 2;
-  }
-  if (keyCode==80) {
-    gameState = 4;
-  }
-  if (keyCode==82) {
-    gameState = 2;
-  }
-  if (keyCode==71) {
-    gameState = 5;
-  }
-}
-
-void keyReleased() {
-  if (keyCode==37) {
-    playerLeft = false;
-  }
-  if (keyCode==39) {
-    playerRight = false;
+void alienMovement() {
+  if (millis()-stopWatch < 20) {
+    for (int i = 0; i < alienXPositionArray.length; i++) {
+      alienXPositionArray[i] += alienDirection*alienSpeed;
+    }
   }
 }
